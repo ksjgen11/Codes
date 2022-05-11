@@ -1,0 +1,1135 @@
+---
+title: "Statistics by R_K_mooc_study"
+author: "Sejun Kim"
+date: "12/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Population and Sampling
+
+Total set = population
+samling -> sample
+
+ex) population mean vs sample mean
+
+
+# Data type
+Quantative type - discrete, continuous
+Qualitative type - nominal(not orderable), ordinal(orderable)
+
+## decription of data
+Quantitative data => frequency table
+ex : the voting results from 2,800 people to candiate  A, B, C
+	A : 1520, B : 770 C: 510
+### frequency table
+
+
+```{r}
+a <- rep('A', 1520)
+b <- rep('B',770)
+c <- rep('C',510) 
+x <- c(a,b,c)
+table(x)
+y <- as.matrix(table(x)) ;y
+freq <- y[,1] ; freq
+relative_freq <- freq/sum(y)
+z <- cbind(freq, relative_freq) ;z
+```
+
+### Pie Chart
+```{r}
+x <- c(1520, 770, 510) ;x
+lab <- c('A', 'B', 'C') ; lab
+y <- round(x/sum(x)*100, digits=1) ; y
+w <- paste(lab, '(', y, '%', ')') ;w
+pie(x, labels=w, main='Pie Chart')
+
+
+
+
+```
+
+
+
+
+
+Ex) : The number of errors each page from a 30-page report
+
+```{R}
+x <- c(1,1,1,3,0,0,1,1,1,0,2,2,0,0,0,1,2,1,2,0,0,1,6,4,3,3,1,2,4,0) ;x
+y <- as.matrix(table(x)) ;y
+freq <- y[,1]; freq
+rel_freq <- freq/sum(freq); rel_freq
+csum <- cumsum(freq); csum
+c_rel_freq <- csum/sum(freq)
+z <- cbind(freq, rel_freq, csum, c_rel_freq) ;z
+```
+
+## Quantitave data
+ - histogram
+ - stem-and-leaf plotting : we can know all values of data, we can assume the data distribution of data.
+
+```{r}
+
+hist(faithful$waiting)
+stem(faithful$waiting)
+
+
+```
+
+## Measures of center and dispersion
+
+### Measures of Center 
+ 1) sample mean : sensitive to outlier
+ 2) sample median : insensitive to outlier = robust
+  - if n is odd : unique median
+  - if n is even : mean of (n/2) and (n/2 + 1)
+ 3) sample quantile : sample 100p-th percentile, 0 <p <1
+  - p = 0.25 = 1st quantile
+  - p = 0.5 = 2nd quantile = median
+  - p = 0.75 = 3rd quantile
+  1) if np is prime number = round up(ex 3.67 -> 4rd)
+  2) if np is integer = (np + np+1)/2
+ 4) type of distribution
+  - mean > median - skewed-to-the-right (skewness > 0)
+  - mean = median - symmetric (skewness = 0)
+  - mean < median - skewed-to-the-left (skewness < 0)
+
+### Measures of Dispersion
+ 1) Sample variance
+  - degree of freedom
+ 2) sample range
+  - R = max - min
+  - IQR = Q3 - Q1 : sample interquartile range
+ 3) Box plot : box shows IQR
+  - box plot
+  - box-whisker plot
+  - max line : 1.5 IQR (out of range : outlier)
+  - min line : 1.5 IQR
+  
+  
+```{r}
+
+x <- stackloss$stack.loss ;x
+
+mean(x)
+var(x)
+sd(x)
+s <- sort(x);s
+length(x)
+quantile(x, c(0.1,0.25,0.5,0.95))
+fivenum(x)
+summary(x)
+boxplot(x, main = 'box plot with outlier') # box-whisker plot = range 1.5, default
+
+boxplot(x, range = 0, main = 'box plot without outlier')
+boxplot(x, range = 1.0)
+```
+## Bivariate data and correlation coefficient
+
+1) all data types are qualitative
+ - first data has r categories, second data has c categories, 
+ the matrix is called r*c contingency table
+
+2) all data types are quantitative
+ - scatter plot
+ 
+3) spurious correlation and lurking variable
+ - ex) between criminal numbers and the number of churches
+
+4) sample correlation coefficient
+$$ r = \frac{S_{xy}}{\sqrt{S_{xx}}\sqrt{S_{yy}}} \\
+S_{xx} = \sum_{i = 1}^{n}(x_i - \bar{x})^{2} \\
+S_{yy} = \sum_{i = 1}^{n}(y_i - \bar{y})^{2} \\
+S_{xy} = \sum_{i = 1}^{n}(x_i - \bar{x})(y_i - \bar{y}) $$
+if we divide by n-1 -> it is sample variance
+
+
+```{r}
+x <- faithful$eruptions
+y <- faithful$waiting
+plot(x,y)
+cor(x,y) # correlation coefficient
+
+```
+
+
+# Probability
+ - uncertainty events -> interesting case
+ - probability calculation based on the data
+ 
+ $ P(A^{c}) = 1 - P(A) $
+ $ P(A\bigcup B) = P(A) + P(B) - P(A\bigcap B)$
+
+
+$ P(A|B) = \frac{P((A\bigcap B)}{P(B)} $
+$ if\ P(A|B) = P(A)$ A and B are independent
+$P(A\bigcap B) = P(A)P(B)$
+
+## random sample
+ - all samples are independent + identically distributed
+ - iid (independent and identically distributed)
+
+# Distribution of probability
+## Random variables
+ = the function defined in sample space
+ 
+### descrite probbability variables
+ - x is finite or countable
+
+
+Below is probability distribution
+$ f(x_i) = P(X = x_i), i = 1, 2, 3, ...., k $
+
+Probability distribution should be satisfied below.
+$$ f(x_i) >0 , i = 1, ....k \\
+\sum_{i=1}^{k}f(x_i) = 1 $$
+
+
+### continuous random variables
+ - x can get all real numbers within specific range
+
+Probability density function should be satisfied below.
+$$ f(x) >0 \\
+\int_{-\infty}^{\infty}f(x) = 1 $$
+
+ - uniform 
+ - bell-shaped
+ - skewed-to-the-left
+ - skewed-to-the-right
+ 
+## Expectation
+
+$$ E(X) = \sum x_i f(x_i)\ or \\
+          \int xf(x)dx$$
+          
+Expected value X = $\mu$ = population mean
+
+### linearity property of expectation
+$$ E(a + bx) = a + bE(x) $$
+where a, b are constant.
+
+$$ E[g(x)] = \sum g(x)f(x_i)\ or \\
+             \int g(x)f(x)dx $$
+             
+### k-th central moment
+
+$$ E[(X-\mu)^{k}] = \sum (X-\mu)^{k}f(x_i)\ or \\
+             \int (X-\mu)^{k}f(x)dx $$
+
+Especially, 2nd central moment = $\sigma^{2}$ = population variance
+
+based on the linearity property of expectation, 
+
+$$ \sigma^{2} = E[(X-\mu)^{2}]\\
+              = E[(X^{2} -2\mu X + \mu^{2})]\\
+              = E(X^{2}) - 2\mu E(X) + \mu^{2}\\
+              = E(X^{2}) - \mu^{2}\\
+              = E(X^{2}) - E(X)^{2}$$
+
+Thus, 
+
+population variance = 2nd central moment - 1st central moment$^2$
+
+
+
+population mean and variance are parameter = unknown constant
+
+To know parameters, sampling to calculate sample mean and sample variance
+
+$$ \mu = E(X),\ \overline{X} = \frac{1}{n}\sum X_i\\
+\sigma^2 = E[(X-\mu)^{2}],\ s^{2} = \frac{1}{n-1}\sum (X_i - \overline{X})^2$$
+
+
+## Bernoulli trials and binominal distribution
+Bernoulli trials
+1) Success or Fail between one
+2) success probability p = P(S) should be same each trial,
+3) Each trial is independent.
+
+Binominal distribution
+X = the number of success for n trials
+p = success probability from each bernoulli trial
+
+When X follows binominal distribution, probability density function is
+$$ f(x) = (\frac{n}{x}) p^x (1-p)^{n-x}, x = 0, 1, ....n\\
+X \sim B(n,p)\\
+\mu = np,\ \sigma^2 = np(1-p)$$
+
+When Y follows Bernoulli trial, 
+$$ Y \sim B(1, p)$$
+
+When, $Y_1,...,Y_n$ are independent Bernoulli trials, 
+$$ X = \sum_{i=1}^{n} Y_i$$
+
+then
+
+$$X \sim B(n,p)$$
+
+## Poisson distribution
+
+Discrete distribution
+X = the number of events within time or space (x = 1, 2, 3, .....)
+m = mean of events within time or space(m = E(X))
+
+When X follows Poisson distribution, probability density function is
+$$ f(x) = (\frac{\exp^{-m} m^x}{x!}), x = 0, 1, ....n\\
+X \sim P(m)\\
+\mu = \sigma^2 = m$$
+
+
+To follow Poisson distribution
+1) independence
+ - each number of events are independent with another number of events at another time or space
+2) lack of clustering
+ - The probability that two events are occured on time is almost 0.
+3) constant rate
+ - the mean of the number of events m is constant at all of time or space.
+ 
+At binominal distribution, if n is very big, p is very small(near 0), np -> m , that binominal 
+distribution is very near with poisson distribution.
+- n is very big but p is very small, it means very rare events. 
+
+
+## normal distribution = Gaussian distribution
+
+When X follows gaussian distribution, PDF is
+
+$$ f(x) = \frac{1}{\sqrt{2\pi}\sigma}\exp(-\frac{(x-\mu)^2}{2\sigma^2})\\
+X \sim N(\mu, \sigma^2)$$
+
+
+--> symmetric distribution by mu. 
+
+the probability of x within $\mu -3\sigma < x < \mu + 3\sigma$ is 99%.
+
+if sigma is smaller, the distribution clustered near mu.
+
+## standard normal distribution
+
+$$ Z\sim N(0, 1)\\
+Z_\alpha : P(Z > Z_\alpha) = \alpha$$
+
+
+
+if $ X\sim N(\mu, \sigma^2)$, 
+$$P(X \leq x) : pnorm(x, \mu, \sigma)\\
+the\ x\ which\ satisfying\ \alpha = P( X \leq x) : qnorm(\alpha, \mu, \sigma)$$
+
+
+
+
+```{r}
+pnorm(2, 0, 1)
+qnorm(0.05, 0, 1)
+
+
+```
+
+## Standardization
+
+if $ X\sim N(\mu, \sigma^2)$, 
+$$ Z = \frac{X -E(X)}{\sqrt{Var(X)}} = \frac{x- \mu}{\sigma} $$
+
+the probability of x within $\mu -3\sigma < x < \mu + 3\sigma$ is 99%. -> $-3 < Z < 3$
+
+To standardization, the size of group is at least 20, and can be assumed equality.
+
+
+## Sampling distribution
+1) Parameter = from population(mean, variance...)
+
+2) Statistic = function of samples (sample mean, sample variance...)
+
+3) Sampling distribution = the distribution of statistics.
+
+### random sample
+1) they have same population
+2) independent each other
+
+When sampling size n from population mean $\mu$, population variance $\sigma^2$, 
+
+The expectation value and variance of sampling mean $\overline{X} = \frac{1}{n}\sum X_i$ are
+$$ E(\overline{X}) = \mu, Var(\overline{X}) = \frac{\sigma^2}{n}$$
+The standard deviation of $\overline{X}$ is $\frac{\sigma}{\sqrt{n}}$
+
+if random sample are from $N(\mu, \sigma^2)$, $\overline{X} \sim N(\mu, \frac{\sigma^2}{n})$
+
+### Central limit theorem (CLT)
+
+When sampling size n from population mean $\mu$, population variance $\sigma^2$, 
+
+if the size n is sufficent large,  $\overline{X} = \frac{1}{n}\sum X_i$ follows
+
+$\overline{X} \sim N(\mu, \frac{\sigma^2}{n})$
+
+Then we standardize it, 
+
+$$ Z = \frac{\overline{X} - E(\overline{X})}{s.d.(\overline{X})} = \frac{\overline{X} - \mu}{\frac{\sigma}{\sqrt{n}}} = \frac{\sqrt{n}(\overline{X} - E(X_1))}{s.d.(X_1)} \\
+\sim N(0, 1) similarly.$$
+
+if the size of group is larger than 25, we can use central limit theorem.
+
+
+
+
+```{r}
+x=floor(runif(2500,0,10)); x 
+
+hist(x)
+mean(x)  # similar with E(X) = 4.5 
+sd(x)  # Similar with s.d.(X) = 2.87
+
+
+y = array (x, c(500,5)) ;y  # create 500 vectors which size 5,and stores 2,500 numbers 
+
+
+xbar = apply(y,1,mean); xbar
+   
+hist(xbar)
+mean(xbar) # similar with E(X) = 4.5
+sd(xbar) # Similar with s.d.(X) / sqrt(n = 5) = 2.87 / sqrt(5) = 1.28
+
+
+
+```
+
+floor -> non-conditionally round down. (<-> ceiling)
+
+When, $Y_1,...,Y_n$ are independent Bernoulli trials, 
+$$ X = \sum_{i=1}^{n} Y_i$$
+$$\overline{Y} = \frac{X}{n}\\
+Z = \frac{(X-np)}{\sqrt{np(1-p)}}\ similarly \sim N(0, 1)$$
+
+To standardization, np > 15, n(1-p) >15 should be satisfied. -> p doesn't near 0 or 1.
+
+# Statistical Inferences
+## Point estimation
+
+statistical inferences = estimation + test of hypothesis
+
+estimation  = point estimation + interval estimation
+
+If point estimation value $\hat{\theta}$ for $ \theta $ satisfied $\hat{\theta} = \hat{\theta}(X_1, ....., X_n, statistics), E(\hat{\theta}) = \theta$, 
+
+We call $\hat{theta}$ unbiased estimator.
+
+$$ 1) E(\overline{X}) = \mu\\
+2) Var(\overline{X}) = \frac{\sigma^2}{n}\\
+3) s.d.(\overline{X}) = \frac{\sigma}{\sqrt{n}}\\
+4) estimator\ of\ s.d. = s.e.(\overline{X}) = \frac{s}{\sqrt{n}}$$
+s.e. = standard error
+
+$$E(s^2) = \sigma^2\\
+\hat{p} = \frac{X}{n}$$
+
+## Interval estimation | Large sample
+
+$$ parameter\ \theta,\ confidence\ interval\ 100(1-\alpha)\% (0<\alpha<1):\\
+The\ intervals\ which\ satisfying\ \\ 
+P(L(\hat{\theta})) < \theta < U(\hat{\theta})) = 1 - \alpha\ is\\
+(L(\hat{\theta}), U(\hat{\theta}))$$
+1- $\alpha$ = level of confidence ($\alpha$ = generally 0.01, 0.05, 0.10)
+100% level of confidence = $(-\infty, \infty)$
+
+### confidence intervals 100(1-a)% for population mean(mu)
+if size of samples is larger than 25(large sample)
+
+According to Central limit theorem, 
+
+$$P(-z_{\frac{\alpha}{2}} < \frac{\overline{X}-\mu}{\frac{\sigma}{\sqrt{n}}} < z_{\frac{\alpha}{2}}) \simeq 1-\alpha\\
+\Longrightarrow P(\overline{X} - z_{\frac{\alpha}{2}} \cdot \frac{\sigma}{\sqrt{n}} < \mu < \overline{X}+ z_{\frac{\alpha}{2}} \cdot \frac{\sigma}{\sqrt{n}})\simeq 1-\alpha$$
+
+if we know $\sigma$, asymtotic confidence intervals is
+$$ \overline{X} \pm z_{\frac{\alpha}{2}} \frac{\sigma}{\sqrt{n}} $$
+
+if we donot know $\sigma$, asymtotic confidence intervals is
+$$ \overline{X} \pm z_{\frac{\alpha}{2}} \frac{s}{\sqrt{n}} $$
+where s is standard error.
+
+
+### confidence intervals for parameter p 100(1-p)%
+$X_1, .....X_n$ are Bernoulli trials with success probability p, np >15 and n(1-p) >15.
+
+$$ X = \sum_{i=1}^{n} X_i \sim B(n, p)\\
+\frac{X -np}{\sqrt{np(1-p)}} \rightarrow N(0,1)$$
+$$ \hat{p} = \frac{X}{n}, $$
+
+
+$$ \hat{p} \pm z_{\frac{\alpha}{2}} \sqrt{\frac{\hat{p}(1-\hat{p})}{n}} $$
+
+## Normal populations
+### small samples (n<25)
+-> the assume that $X_1, ....X_n$ should follow normal distribution.
+
+ -> Student t- distribution (Student t-distribution)
+ 
+If $X_1, ....X_n$ follows normal distribution, 
+$$ T = \frac{\overline{X}-\mu}{\frac{s}{\sqrt{n}}}\\
+follows\ degree\ of\ freedom\ n-1\ t-distribution.\ T \sim t(n-1)$$
+
+Degree of freedom(df) : observations - the number of constraints
+ex) if we get 3 observations - 3 df
+but when $\overline(X) = 3$, (one constraint), d.f = 3-1 = 2
+
+generally, d.f. = n - the number of constraints
+
+t-dist is symmetric distribution
+if d.f. is larger, nearer N(0, 1)
+t-dist has heavy-tailed distribution
+
+
+### confidence intervals 100(1-a)% for population mean(mu) at t distribution
+$$ \overline{X} \pm t_{\frac{\alpha}{2}} \frac{s}{\sqrt{n}} $$
+
+## Test of statistical hypothesis
+1) null hypothesis vs alternative hypothesis
+2) test statistics
+3) rejection region : such value c,H0 is rejected when  $\overline{X}$> c
+
+$$\alpha = level\ of\ significance\ -\ probability (H_0\ is\ true,\ but\ H_0\ is\ rejected\ -\ type\ I\ error)\\
+\beta = probability (H_0\ is\ false,\ but\ H_0\ is\ not\ rejected\ -\ type\ II\ error)\\
+power\ of\ test = 1-\beta$$
+generally, set $\alpha$ to very small value(0.01, 0.05, 0.1).. then using maximum of power of test
+
+
+$$\alpha = P[\overline{X} >c] = P[\frac{\overline{X}-10}{\frac{2}{\sqrt{50}}} > \frac{c-10}{\frac{2}{\sqrt{50}}} ] = P[Z > Z_\alpha]$$
+Thus $$ c = Z_\alpha \frac{2}{\sqrt{50}} + 10$$
+
+confidence interval = acceptance region(1-rejection region)
+
+## estimation for variance
+$$W \equiv \frac{\sum(X_i - \overline{X})^2}{\sigma^2} = \frac{(n-1)s^2}{\sigma^2}$$
+it follows chi-square distibution with d.f. n-1, 
+$$ W\sim \chi^2(n-1)$$
+
+W >0 , always positive, skewed-to-the-right
+
+
+
+
+
+# Comparing two population
+## independent 2 populations test - large sample
+
+1) populations are independent each other
+2) n1, n2 are sufficiently larger.
+
+$$ Var(\overline{X} \pm \overline{Y}) = Var(\overline{X}) + Var (\overline{Y})\\
+ = \frac{s_{x}^2}{n} + \frac{s_{y}^2}{n}$$
+ 
+## independent 2 populations test - small sample, normal population
+
+1) normality assumption
+2) equal variance assumption = homogeniety
+3) two samples are independent
+
+$$ E(\overline{X} - \overline{Y}) = \mu_1 - \mu_2\\
+Var(\overline{X}- \overline{Y}) = \sigma^2(\frac{1}{n_1} + \frac{1}{n_2})\\
+
+sp = pooled\ variance\\
+s_{p}^2 = \frac{(n-1)s_{1}^2 + (n_2 -1)s_{2}^2}{n_1 + n_2 -2}\\
+
+(\overline{X}-\overline{Y}) \pm t_{\frac{\alpha}{2}}s_p\sqrt{\frac{1}{n_1}+ \frac{1}{n_2}}$$
+
+```{r}
+
+A <- c(79.98, 80.04, 80.02, 80.04, 80.03, 80.03, 80.04, 79.97,
+       80.05, 80.03, 80.02, 80.00, 80.02) ;A
+
+B <- c(80.02, 79.94, 79.98, 79.97, 79.97, 80.03, 79.95, 79.97);B
+
+boxplot(A,B) 
+
+t.test(A,B, var.equal=T) 
+	# usual two-sample t-test
+t.test(A,B) 
+	#Welch's two sample t-test (assuming unequal variances)
+t.test(A,B, var.equal=F) 
+	#Welch's two sample t-test (assuming unequal variances)
+
+
+
+
+```
+
+if we cannot assume homogeneity
+
+0.5 < s1/s2 < 2 -> rule of thumb -> equal variance
+
+if out of range
+
+$$ t^* = \frac{(\overline{X} - \overline{Y}) - (\mu_1 - \mu_2)}{\sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}} \sim t\min((n_1 -1),(n_2 -1))$$
+
+
+## Matched Pair comparisons
+1) data type = random sample, independent
+2) statistics
+$$ \overline{D} = 1/n \sum D_i, s_D^2 = 1/(n-1) \sum(D_i - \overline{D})^2\\
+
+E(D_i) = \delta \\
+Var(D_i) = \sigma_D^2$$
+```{r}
+
+x <- c(70, 80, 72, 76, 76, 76, 72, 78, 82, 64, 74, 92, 74, 68, 84)
+y <- c(68, 72, 62, 70, 58, 66, 68, 52, 64, 72, 74, 60, 74, 72, 74)
+
+# Method I
+t.test (x,y, paired=T, conf.level=0.95)
+
+#Method II
+d <- x-y
+t.test(d)
+
+
+
+```
+
+## Comparisons of two populations propertions
+```{r}
+# population 1 : the number of events, success number
+# population 2 : the number of events, success number 
+
+prop.test (x=c(88,126), n=c(100,150))
+
+```
+
+
+# Regression analysis
+Y - response variable or dependent variables
+X - covariates
+e - error term
+f() = regression function
+- estimate regression function by Y and X observation
+
+## least squares estimation
+estimate (error term)^2
+
+$$ \hat{\beta}_0 = \overline{Y} - \hat{\beta}_1 \overline{X}\\
+\hat{\beta}_1 = \frac{S_{XY}}{S_{XX}}\\
+
+S_{XY} = \sum(X_i - \overline{X})(Y_i - \overline{Y}), S_{XX} = \sum(X_i - \overline{X})^2$$
+
+residual = Yi - Yi_hat
+
+total residual sum = 0
+
+## Goodness-of-fit
+SST = SSR + SSE
+total sum of squares = regression sum of squares + error sum of squares
+$$ \sum(Y_i -\overline{Y})^2 = \sum(\hat{Y}_i - \overline{Y})^2 + \sum (Y_i -\hat{Y}_i)^2$$
+
+d.f (n-1) = 1 + (n-2)
+
+SST is constant : if well fitted, SSR increases, SSE opposite.
+
+ANOVA - analysis of variance
+
+Occured where / Square sums / d.f. / mean square - square sums divided by d.f. / F ratio
+regression / SSR / p-1 / MSR(Regression mean squares) = SSR/p-1 / F0 = MSR / MSE (~F(p-1, n-p))
+error / SSE / n-p / MSE(Error mean squares) = SSE/(n-p) /
+total / SST / n-1 / /
+
+
+
+R^2 = coefficient of determinant = SSR/SST = 1 - SSE/SST
+
+0 < R^2 < 1
+
+
+```{r}
+x <- c(3, 3,  4, 5,  6,  6,  7,  8,  8,  9)
+y <- c(9, 5, 12, 9, 14, 16, 22, 18, 24, 22)
+plot(x,y) 
+
+cor(x,y)
+
+# fit to simple linear model
+fit <- lm(y~x) # lm(y~1) = Ybar
+summary(fit)
+# to know each residuals
+resid (fit)
+rr <- y - fitted(fit); rr
+
+# to know coefficient of determinant
+coef(fit)
+fit$coefficients
+
+# confidence intervals of coefficient
+confint(fit, level=0.95)
+
+# ANOVA of regression model
+anova(fit)
+
+#plotting scatter plot equal time
+plot(x,y)
+abline(fit)
+
+
+# plotting on the 2D by R
+
+
+faithful
+x <- faithful$eruption
+y <- faithful$waiting
+
+plot(x,y)
+plot(x,y, xlab='eruption', ylab='waiting', main='faithful data', xlim=c(0, 7), ylim=c(30,100))
+
+x1 <- x[1:136]; x1
+x2 <- x[137:272]; x2
+y1 <- y[1:136] ; y1
+y2 <- y[137:272] ; y2
+
+plot(c(x1,x2), c(y1,y2), type="n")
+points(x1, y1, col="red")
+points(x2, y2, col="blue")
+abline(lm(y1~x1))
+abline(lm(y2~x2))
+abline(lm(y~x))
+```
+
+## Multiple linear regression model
+
+total sum of squares = regression sum of squares + error sum of squares
+$$ \sum(Y_i -\overline{Y})^2 = \sum(\hat{Y}_i - \overline{Y})^2 + \sum (Y_i -\hat{Y}_i)^2$$
+
+d.f (n-1) = (p-1) + (n-p)
+
+SST is constant : if well fitted, SSR increases, SSE opposite.
+
+ANOVA - analysis of variance
+
+Occured where / Square sums / d.f. / mean square - square sums divided by d.f. / F ratio
+regression / SSR / 1 / MSR(Regression mean squares) = SSR/1 / F0 = MSR / MSE
+error / SSE / n-2 / MSE(Error mean squares) = SSE/(n-2) /
+total / SST / n-1 / /
+
+
+```{r}
+stackloss
+y <- stackloss$stack.loss ; y
+x1 <- stackloss$Air.Flow ; x1
+x2 <- stackloss$Water.Temp ; x2
+x3 <- stackloss$Acid.Conc. ; x3
+X <-cbind(x1,x2,x3) ; X
+
+pairs(X) # pairwise scatterplot matrix of covariates
+
+stackfit <- lm(y ~ x1 + x2 + x3)  # model fitting
+
+plot(stackfit) # 4 basic plots 
+			# - residual vs fitted
+			# - normal qq plot
+			# - standardized residual vs fitted
+			# - Cook's distance
+
+summary(stackfit) # basic estimation results
+
+anova(stackfit) # analysis of variance table
+
+deviance(stackfit) # SSR
+
+deviance(lm(y~1))  # SST
+
+residuals(stackfit) # y - y^hat
+
+vcov(stackfit) # variance-covariance matrix for beta^hat
+
+coef(stackfit) # beta^hat
+
+step(stackfit) # stepwise regression with AIC
+
+```
+
+
+# Catergorical data
+
+contingency table - two data are qualitative data both
+
+- Pearson's goodness-of-fit test
+
+ex) genetic experiment - green pea x yellow pea test
+ - r x c table = r<- 1, c<- 4
+- Pearson's goodness-of-fit test
+
+ex) cold infection depends on the vitamin C
+r = 2, c = 2 -> r x c table
+- one-margin fixed
+- prospective study
+
+
+-> homogeneity test(infection rate would be same)
+
+
+r x c -> 2 margins exist
+
+
+
+ex) cholesterol and blood pressure relations ( 2 x 4 table)
+- neither margin fixed
+- retrospective study
+
+-> independence test (two variables are independent each other)
+
+## Goodness-of-Fit test
+
+if r = 1 case
+
+observations : n1, n2, ....nk
+probability at H0 condition : p10, p20, .....pk0
+Expected frequency(E) : np10, np20, ....npk0
+
+-> Pearson's chi-square Goodness-of-Fit test(when n >25)
+
+null hypothesis : H0 : p1 = p10, p2 = p20, ....pk = pk0
+statistics : chi-square = sum((ni-npi0)^2/npi0) = sum((Observation - Expectation)^2 / Expectation)
+rejection region : chi-square > chi-square_a
+d.f.  = k -1
+
+```{r}
+
+x<-matrix(c(773,231,238,59),nrow=1,ncol=4); x
+chi<-chisq.test(x,p=c(9/16,3/16,3/16,1/16)); chi
+
+chi$observed
+chi$expected
+chi$residuals # pearson type residuals
+
+```
+
+
+## Test of homogeneity
+
+null hypothesis : the probability of row variable rate are constant regardless column variable
+statistics : chi-square =  sum((O - E)^2 / E), O = observations, E = (row sum x column sum)/total sum
+rejection region : chi-square > chi-square_a
+d.f.  = (row number -1) x (column number -1) = (r-1)x (c-1)
+
+```{r}
+
+x<-matrix(c(31,17,109,122),nc=2); x
+chi<-chisq.test(x,correct=FALSE); chi
+
+chi$observed
+chi$expected
+sum((chi$observed-chi$expected)^2/chi$expected)
+chi$statistic
+
+
+
+# Contingency table making
+x<-c(31,17,109,122)
+
+group<-gl(2,1,4,labels=c("case","control")); group # gl = generalized linear model
+
+infection<-gl(2,2,labels=c("yes","no")); infection
+
+table<-xtabs(x~group+infection); table # xtabs -> x is cross, tab is table, ~ is goodness-of-fit, group+ infection -> table
+
+chisq.test(table,correct = FALSE)
+```
+
+## Test of independence
+
+ - same as homogeneity test
+ 
+```{r}
+x<-c(5,5,3,7,15,23,17,17)
+cholesterol<-gl(2,4,labels=c("less than 220","equal or more than 220")); cholesterol
+
+bloodpressure<-gl(4,1,8,labels=c("less than 127","127~146","146~166","equal or more than 167")); bloodpressure
+
+table<-xtabs(x~cholesterol+bloodpressure); table
+chisq.test(table)
+```
+
+
+# Analysis of Variance
+## CRD : Completely randomized design
+-> purpose : is it different between treatment?
+
+one-way ANOVA model
+$$Y_{ij} = \mu_i + \epsilon_{ij}, i = 1,....,k, j = 1, ...., n_i$$
+
+Y_ij = jth observations when i th treatment
+mu_i = the parameter of i-th treatment
+e_ij ~ N(0, sigma^2) = error term
+
+SST = SSt (treatment of sum squares) + SSE
+d.f sum(n_i) -1 = (k-1) + (sum(ni) -k)
+
+ANOVA table
+Source of variation / sum squares / d.f. / Mean Sum square
+
+F-test  = (SSt/k-1)/(SSE/(n-k)) >= F_a (k-1, n-k)
+if SSt(can be explained by treatement) is greater, H0 can be rejected
+```{r}
+
+#One-way ANOVA(oneway.test)
+
+a<-c(64,72,68,77,56,95)
+b<-c(78,91,97,82,85,77)
+c<-c(75,93,78,71,63,76)
+d<-c(55,66,49,64,70,68)
+
+data<-data.frame(a,b,c,d); data
+
+data.stack<-stack(data); data.stack
+
+oneway.test(values~ind, data=data.stack, var.equal=T)
+
+boxplot(values~ind, data=data.stack)
+
+
+
+#One-way ANOVA(aov)
+type<-c("a","a","a","a","a","a","b","b","b","b","b","b","c","c","c","c","c","c","d","d","d","d","d","d")
+y<-c(64,72,68,77,56,95,78,91,97,82,85,77,75,93,78,71,63,76,55,66,49,64,70,68)
+
+type.factor<-as.factor(type); type.factor
+data.aov<-aov(y~type.factor); data.aov
+summary(data.aov)
+
+
+
+```
+
+
+## Simultaneous C.I.
+
+- It is not same treatment effect even though H0 is rejected.
+
+(k  = d the number of differences
+ 2)
+->  calculate simulatneous C.I., u_i - u_j, i <j
+
+if k = 3,
+
+95 % CI are A1, A2, A3 
+P(A1 and A2 and A3) = (0.95)^3 = 0.857
+
+-> Bonferrnoi's adjustment(when k is small)
+ 
+1- a = P(CI of Ai) = 1- P(union of Ai^c) >= 1 - sum(P(A_i^c)) = 1 - da*
+
+when we use a/d instead of a, we can get 1-a CI
+
+```{r}
+
+type<-c("a","a","a","b","b","b","c","c")
+y<-c(92.4,91.6,92.8,91.3,91.0,91.7,93.1,93.5)
+type.factor<-as.factor(type)
+data.aov<-aov(y~type.factor)
+summary(data.aov)
+boxplot(y~type.factor)
+
+
+#t-CI for muliple
+t<-qt(1-(0.05/(2*3)),8-3); t
+c((92.267-91.333)-t*0.464*sqrt(1/3+1/3),(92.267-91.333)+t*0.464*sqrt(1/3+1/3))
+c((92.267-93.300)-t*0.464*sqrt(1/3+1/2),(92.267-93.300)+t*0.464*sqrt(1/3+1/2))
+c((91.333-93.300)-t*0.464*sqrt(1/3+1/2),(91.333-93.300)+t*0.464*sqrt(1/3+1/2))
+
+
+#each CI
+t<-qt(1-(0.05/2),8-3); t
+
+c((92.267-91.333)-t*0.464*sqrt(1/3+1/3),(92.267-91.333)+t*0.464*sqrt(1/3+1/3))
+c((92.267-93.300)-t*0.464*sqrt(1/3+1/2),(92.267-93.300)+t*0.464*sqrt(1/3+1/2))
+c((91.333-93.300)-t*0.464*sqrt(1/3+1/2),(91.333-93.300)+t*0.464*sqrt(1/3+1/2))
+
+```
+
+# Nonparametic Statistics
+## Wilcoxon Rank sum test
+ - large sample = CLT
+ - small sample & normality - t distribution
+ - small & non-normality- nonparametic statistics
+ 
+Populations A, B which continuous, 
+H0 : the distribution of A: B are same
+H1 : B distribution is moved delta than A (u_b > u_a)
+
+data combination and treatment with rank-> 1b 2b 3a 4b 5a
+rank sum of Wa -> 3 + 5 = 8, reject H0 if Wa > C
+
+total sample space -> each rank sum -> probability calculation
+
+-> Probability table for Wa
+
+```{r}
+
+a<-c(31.8,39.1)
+b<-c(35.5,27.6,21.3)
+test<-wilcox.test(a,b,alternative="greater",correct=FALSE); test
+
+
+
+```
+
+## The sign test and sign rank test
+
+ - Matched pair statistics, -> how we use nonparmetric statistics?
+ 
+H0 delta = 0, H1 delta >0 
+S = positive number within D1, ...Dn 
+p = 0.5 Bernoulli trial -> S ~B(n, 0.5)
+H0 : p = 1/2 or H1 = p >1/2
+
+Wilcoxon signed-rank test
+- Absolute Di value rank sum within positive D_is
+
+```{r}
+a<-c(16.4,10.3,15.8,16.5,12.5,8.3,12.1,10.1,12.9,12.6,17.3,9.4)
+length(a)
+b<-c(14.3,9.8,16.9,17.2,10.5,7.9,12.4,8.6,13.1,11.6,15.5,8.6)
+length(b)
+t<-62 # Wilcoxon signed-rank test statistics value
+n<-12
+z<-(t-n*(n+1)/4)/sqrt(n*(n+1)*(2*n+1)/24); z
+pnorm(z,lower.tail=FALSE)
+
+#Wilcoxon signed-rank test
+wilcox.test(a,b,alternative="greater",paired=TRUE) # paired argument needed to use signed-rank test
+
+
+```
+
+
+## Correlation Based on Ranks
+```{r}
+x<-c(6,9,2,8,5)
+y<-c(8,10,4,7,3)
+cor.test(x,y,method="spearman")
+
+binom.test(3,5,alternative="greater")
+
+a <- c(1,3,5)
+b <- c(2,4,5)
+cor.test(a, b,method = 'spearman')
+
+```
+
+
+two sample test
+
+t.test # Student’s t test (comparing two means with normal errors)
+prop.test  # binomial test (comparing two proportions)
+var.test # Fisher’s F test (comparing two variances with normal errors)
+wilcox.test # Wilcoxon rank test (comparing two means with non-normal errors)
+
+
+# Simulation
+## Simulation experiment
+
+### monte carlo method
+- computing function value probability by random number
+
+## pi computing
+
+
+```{r}
+N <- c(100, 500, 1000, 10000, 100000, 1000000)
+pi_hat <- 0
+
+for(i in 1: length(N)){
+n <- N[i]
+U1 <- runif(n,0,1)
+U2 <- runif(n,0,1)
+radius <- 1
+
+	result <- ifelse(U1^2+U2^2 < 1, 1, 0)
+	theta <- seq(0,pi/2,length=361)
+	col <- ifelse(result == 1,4,2)
+
+plot(U1 ,U2,col=col ,xlim=c(0,1) ,ylim=c(0,1),xlab="X",ylab="Y")
+lines(x = radius * cos(theta), y = radius * sin(theta))
+
+pi_hat[i] <- 4*mean(result)
+}
+
+(rbind(N,pi_hat))
+
+```
+### by integration
+
+```{r}
+g <- function(x) sqrt(1-x^2)
+N <- c(100, 500, 1000, 10000, 100000, 1000000)
+result <- 0
+
+for(i in 1 : length(N)) {
+
+n <- N[i]
+U <- runif(n,0,1)
+result[i] <- 4*mean(g(U))
+
+}
+
+result
+
+```
+
+
+## Taylor series expansion
+
+## Newton-Raphson ietration
+ 
+- Maximum likelihood estimator
+$$L(\theta) = L(\theta:x) = \prod_{i=1}^{n} f(x_i:\theta)\\
+l(\theta) = log L(\theta) = \sum_{i=1}^{n} \log{f(x_i:\theta)}\\
+
+\hat{\theta} = solution\ of\ l(\theta). MLE\ of\ \theta$$
+
+
+$\frac {\Gamma^{'}(\theta)}{\Gamma(\theta)} = 0$ called psigamma.
+
+
+```{r}
+# Newton-Raphson iteration
+
+
+l_deriv <- function(theta){
+n <- length(X) 
+y <- sum(log(X))- n*psigamma(theta)
+}
+# psigamma(theta) : gamma(theta)'/gamma(theta)
+
+# sampling gamma samples
+X <- rgamma(100,10,1)
+
+X
+
+# Newton-Raphson iteration
+h <- 1e-07
+e <- 1e-07
+theta_pre = 0
+theta_new = 0.1
+t=0
+process <- cbind(t=0,theta_pre=0,theta_new=0.1,diff=0.1)
+while(abs(theta_new-theta_pre)>=e){
+theta_pre <- theta_new
+l_deriv2 <- (l_deriv(theta_pre+h)-l_deriv(theta_pre))/h
+theta_new <- theta_pre -l_deriv(theta_pre)/l_deriv2
+t=t+1
+process <- rbind(process,data.frame(t=round(t,1),theta_pre=theta_pre,theta_new=theta_new,diff=abs(theta_new-theta_pre)))
+}
+process
+
+``` 
+
+
+
+
+
+
+
+
+
+
+

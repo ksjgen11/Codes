@@ -1,0 +1,28 @@
+---
+title: "Seurat_homework_1"
+author: "Sejun Kim"
+date: '2022 4 18 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# load Seurat package
+
+```{r}
+library(Seurat)
+```
+
+
+
+# Session information
+
+```{r}
+sessionInfo()
+```
+
+
+

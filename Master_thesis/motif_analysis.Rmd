@@ -1,0 +1,381 @@
+---
+title: "Motif_analysis"
+author: "Sejun Kim"
+date: '2022 3 12 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(pheatmap)
+library(RColorBrewer)
+library(factoextra)
+library(ggfortify)
+library(ggrepel)
+library(VennDiagram)
+
+
+figure <- 'd:/Projects/UCPH/Work/master_thesis/figures/'
+dataset <- 'd:/Projects/UCPH/Work/master_thesis/datasets/'
+atac <- 'd:/Projects/UCPH/Work/atacseq/'
+peaks <- paste0(atac,'new/')
+motifs <- paste0(peaks, 'motifs/')
+rna <- 'd:/Projects/UCPH/Work/rnaseq/'
+figures <- 'd:/Projects/UCPH/Work/master_thesis/figures_wo_legend/'
+
+```
+
+
+
+# motifs
+
+```{r}
+prefix <- 'knownResults_'
+motif_nt <- read_tsv(paste0(motifs, prefix, 'siNT.txt')) %>%
+  mutate(TFs = str_split(str_split(.$`Motif Name`, '/', simplify = T)[,1],
+                         '\\(', simplify = T)[,1],
+         Genes = str_split(str_split(str_split(.$`Motif Name`, '/', simplify = T)[,1],
+                         '\\(', simplify = T)[,2],'\\)', simplify = T)[,1],
+         from = str_split(.$`Motif Name`, '/', simplify = T)[,2], 
+         Target_percent = as.numeric(str_split(.$`% of Target Sequences with Motif`,
+                                               '\\%', simplify = T)[,1]), 
+         Bg_percent = as.numeric(str_split(.$`% of Background Sequences with Motif`,
+                                           '\\%', simplify = T)[,1]), 
+         log_pvalue = `Log P-value`) %>%
+  dplyr::select(c(TFs, Genes, from, log_pvalue, Target_percent,Bg_percent))%>%
+  filter(exp(log_pvalue) <=1e-10, Target_percent - Bg_percent >= 3) %>%
+  mutate(group = 'siNT')
+  
+
+
+motif_12d <- read_tsv(paste0(motifs, prefix, 'si673_12h_d.txt')) %>%
+  mutate(TFs = str_split(str_split(.$`Motif Name`, '/', simplify = T)[,1],
+                         '\\(', simplify = T)[,1],
+         Genes = str_split(str_split(str_split(.$`Motif Name`, '/', simplify = T)[,1],
+                         '\\(', simplify = T)[,2],'\\)', simplify = T)[,1],
+         from = str_split(.$`Motif Name`, '/', simplify = T)[,2], 
+         Target_percent = as.numeric(str_split(.$`% of Target Sequences with Motif`,
+                                               '\\%', simplify = T)[,1]), 
+         Bg_percent = as.numeric(str_split(.$`% of Background Sequences with Motif`,
+                                           '\\%', simplify = T)[,1]), 
+         log_pvalue = `Log P-value`) %>%
+  dplyr::select(c(TFs, Genes, from, log_pvalue, Target_percent,Bg_percent))%>%
+  filter(exp(log_pvalue) <=1e-10, Target_percent - Bg_percent >= 3)%>%
+  mutate(group = 'si673_12h')
+
+
+
+
+write.table(motif_nt, paste0(dataset, 'organized_motif_siNT.csv'))
+write.table(motif_12d, paste0(dataset, 'organized_motif_si673_12h_delete.csv'))
+
+```
+
+
+# comparing motifs in 12h deseq
+
+```{r}
+atacseq_12d <- read_csv(paste0(dataset,'result_atac_12h_delete.csv'))%>%
+  na.omit() %>%
+  dplyr::select(c(TFs = genes, log2FoldChange, padj))
+
+atac_12d_motifs <- atacseq_12d  %>%
+  inner_join(., motif_12d, by = 'TFs') %>%
+  arrange(padj) %>%
+  filter(!(TFs %in% motif_nt$TFs))%>%
+  filter(padj < 0.05)
+
+write.csv(atac_12d_motifs, paste0(dataset, "atac_motif_significant_12_delete.csv"))
+
+```
+
+
+## motif analaysis with rnaseq, statistical test
+
+
+```{r}
+
+atac_deseq_12d <- read_csv('d:/Projects/UCPH/Work/master_thesis/datasets/result_atac_12h_delete.csv') %>%
+  dplyr::select(c(merged, log2FoldChange, padj, TFs=genes))
+
+rnaseq <- read_csv(paste0(dataset, 'rnaseq_deseq_final_result_total.csv')) %>%
+  dplyr::select(c(gene, log2FoldChange, padj, TFs=symbol))
+
+total_motifs <- read_tsv(paste0(dataset, 'atac_12h_motifs_total_annotates.txt')) 
+
+col <- colnames(total_motifs)
+
+col[1] <- 'PeakID'
+col[22] <- 'KLF3'
+col[23] <- 'KLF14'
+col[24] <- 'MYB'
+colnames(total_motifs) <- col
+
+klf3 <- total_motifs %>%
+  filter(!is.na(KLF3)) %>%
+  dplyr::select(c(TFs = `Gene Name`, `Gene Alias`, `Gene Description`, KLF3))
+
+klf14 <- total_motifs %>%
+  filter(!is.na(KLF14)) %>%
+  dplyr::select(c(TFs = `Gene Name`, `Gene Alias`, `Gene Description`, KLF14))
+
+myb <- total_motifs %>%
+  filter(!is.na(MYB)) %>%
+  dplyr::select(c(TFs = `Gene Name`, `Gene Alias`, `Gene Description`, MYB))
+
+
+motif_12d <- atac_deseq_12d %>%
+  na.omit() %>%
+  mutate(klf3 = ifelse(TFs %in% klf3$TFs, 'klf3_related', 'klf3_not'),
+         klf14 = ifelse(TFs %in% klf14$TFs, 'klf14_related', 'klf14_not'),
+         myb = ifelse(TFs %in% myb$TFs, 'myb_related', 'myb_not'),
+         DEgenes = ifelse(padj <= 0.05, 'significant', 'not_significant'))
+
+
+atac_klf3_table <- table('DE gene' = motif_12d$DEgenes, 'klf3 gene' = motif_12d$klf3)
+atac_klf3_table
+
+atac_klf3_test <-fisher.test(atac_klf3_table)
+atac_klf3_test$estimate
+atac_klf3_test$p.value
+
+atac_klf14_table <- table('DE gene' = motif_12d$DEgenes, 'klf14 gene' = motif_12d$klf14)
+atac_klf14_table
+
+atac_klf14_test <-fisher.test(atac_klf14_table)
+atac_klf14_test$estimate
+atac_klf14_test$p.value
+
+
+atac_myb_table <- table('DE gene' = motif_12d$DEgenes, 'myb gene' = motif_12d$myb)
+atac_myb_table
+
+atac_myb_test <-fisher.test(atac_myb_table)
+atac_myb_test$estimate
+atac_myb_test$p.value
+
+klf_12d_sig <- motif_12d %>% filter(padj < 0.05, (klf3 == 'klf3_related'| klf14 == 'klf14_related')) %>%
+  dplyr::select(-myb) %>%
+  arrange(log2FoldChange)
+
+klf3_atac_sig <- klf_12d_sig %>% filter(klf3 == 'klf3_related')
+klf14_atac_sig <- klf_12d_sig %>% filter(klf14 == 'klf14_related')
+klfs_atac_dual_sig <- klf_12d_sig %>% filter(klf3 == 'klf3_related', klf14 == 'klf14_related')
+
+grid.newpage()
+png(filename = paste0(figure, 'venn_diagram_atac_motifs_gene.png'))
+venn <- draw.pairwise.venn(nrow(klf3_atac_sig), nrow(klf14_atac_sig), nrow(klfs_atac_dual_sig),
+                   category = c('KLF3_related', 'KLF14_related'),
+                   scaled = TRUE,
+                   lty = rep("blank", 2),   # Hide the border of circles.
+                   fill = c("light blue", "#bbffbb"),   # Color.
+                   cat.pos = c(0, 0),                   # Position of labels.
+                   fontfamily = "Arial",                # Font name for numbers.
+                   cat.fontface="bold",                 # Font style for labels.
+                   cat.fontfamily ="Arial"              # Font name for labels.
+)
+
+grid.draw(venn)
+
+dev.off()
+
+
+write.csv(klf_12d_sig, file = 'd:/Projects/UCPH/Work/master_thesis/datasets/atac_klfs_12d_sig.csv')
+write.csv(klf14_atac_sig, file = 'd:/Projects/UCPH/Work/master_thesis/datasets/atac_klf14_12d_sig.csv')
+
+motif_rna <- rnaseq %>%
+  na.omit() %>%
+  mutate(klf3 = ifelse(TFs %in% klf3$TFs, 'klf3_related', 'klf3_not'),
+         klf14 = ifelse(TFs %in% klf14$TFs, 'klf14_related', 'klf14_not'),
+         myb = ifelse(TFs %in% myb$TFs, 'myb_related', 'myb_not'),
+         DEgenes = ifelse(padj <= 0.05, 'significant', 'not_significant'))
+
+
+rna_klf3_table <- table('DE gene' = motif_rna$DEgenes, 'klf3 gene' = motif_rna$klf3)
+rna_klf3_table
+
+rna_klf3_test <-fisher.test(rna_klf3_table)
+rna_klf3_test$estimate
+rna_klf3_test$p.value
+
+rna_klf14_table <- table('DE gene' = motif_rna$DEgenes, 'klf14 gene' = motif_rna$klf14)
+rna_klf14_table
+
+rna_klf14_test <-fisher.test(rna_klf14_table)
+rna_klf14_test$estimate
+rna_klf14_test$p.value
+
+
+rna_myb_table <- table('DE gene' = motif_rna$DEgenes, 'myb gene' = motif_rna$myb)
+rna_myb_table
+
+rna_myb_test <-fisher.test(rna_myb_table)
+rna_myb_test$estimate
+rna_myb_test$p.value
+
+
+klf_rna_sig <- motif_rna %>% filter(padj < 0.05, (klf3 == 'klf3_related'| klf14 == 'klf14_related')) %>%
+  dplyr::select(-myb) %>%
+  arrange(log2FoldChange)
+
+klf3_rna_sig <- klf_rna_sig %>% filter(klf3 == 'klf3_related')
+klf14_rna_sig <- klf_rna_sig %>% filter(klf14 == 'klf14_related')
+klfs_rna_dual_sig <- klf_rna_sig %>% filter(klf3 == 'klf3_related', klf14 == 'klf14_related')
+
+write.csv(klf_rna_sig, file = 'd:/Projects/UCPH/Work/master_thesis/datasets/rna_klf_sig.csv')
+write.csv(klf14_rna_sig, file = 'd:/Projects/UCPH/Work/master_thesis/datasets/rna_klf14_sig.csv')
+
+grid.newpage()
+png(filename = paste0(figure, 'venn_diagram_rna_motifs_gene.png'))
+venn <- draw.pairwise.venn(nrow(klf3_rna_sig), nrow(klf14_rna_sig), nrow(klfs_rna_dual_sig),
+                   category = c('KLF3_related', 'KLF14_related'),
+                   scaled = TRUE,
+                   lty = rep("blank", 2),   # Hide the border of circles.
+                   fill = c("light blue", "#bbffbb"),   # Color.
+                   cat.pos = c(0, 0),                   # Position of labels.
+                   fontfamily = "Arial",                # Font name for numbers.
+                   cat.fontface="bold",                 # Font style for labels.
+                   cat.fontfamily ="Arial"              # Font name for labels.
+)
+
+grid.draw(venn)
+
+dev.off()
+
+```
+
+
+
+# atacseq go term analysis
+
+```{r}
+atac_12h_up <- read_csv('d:/Projects/UCPH/Work/master_thesis/datasets/go_term_atac_12h_klf14_related_up_regulated.csv')
+atac_12h_down <- read_csv('d:/Projects/UCPH/Work/master_thesis/datasets/go_term_atac_12h_klf14_related_down_regulated.csv')
+
+atac_12h_up_bp <- atac_12h_up %>%
+  filter(str_detect(source, 'GO:BP')) %>%
+  arrange(desc(adjusted_p_value)) %>%
+  filter(order(adjusted_p_value) <= 10)
+
+  
+
+atac_12h_up_gene_order <- factor(atac_12h_up_bp$term_name, order = T)
+
+atac_12h_up_plot <- atac_12h_up_bp %>%
+  ggplot(aes(x = term_name, y = -log10(adjusted_p_value))) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  # ggtitle('Biological process ') +
+  xlab('Biological Process') +
+  ylab('-log10 adjusted P value') +
+  scale_x_discrete(limits = atac_12h_up_gene_order) +
+  theme_bw()
+atac_12h_up_plot
+ggsave(atac_12h_up_plot, file = paste0(figure, 'go_term_upregulated_atac_12h.png'))
+```
+
+```{r}
+atac_12h_down_bp <- atac_12h_down %>%
+  filter(str_detect(source, 'GO:BP')) %>%
+  arrange(desc(adjusted_p_value)) %>%
+  filter(order(adjusted_p_value) <= 10)
+
+atac_12h_down_gene_order <- factor(atac_12h_down_bp$term_name, order = T)
+
+atac_12h_down_plot <- atac_12h_down_bp %>%
+  ggplot(aes(x = term_name, y = -log10(adjusted_p_value))) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  # ggtitle('Biological process ') +
+  xlab('Biological Process') +
+  ylab('-log10 adjusted P value') +
+  scale_x_discrete(limits = atac_12h_down_gene_order) +
+  theme_bw()
+atac_12h_down_plot
+ggsave(atac_12h_down_plot, file = paste0(figure, 'go_term_downregulated_atac_12h.png'))
+```
+
+
+# rnaseq atacseq intersection
+
+```{r}
+
+rnaseq <- read.csv(paste0(dataset, 'rnaseq_deseq_final_result_total.csv')) %>%
+  na.omit()
+atacseq <- read.csv(paste0(dataset, 'result_atac_12h_delete.csv'))%>%
+  mutate(symbol = str_split(.$genes, ' ', simplify = T)[,1]) %>%
+  dplyr::select(-genes) %>%
+  na.omit()
+
+klf14_rna_sig <- read.csv(paste0(dataset, 'rna_klf14_sig.csv'))
+
+inter <- rnaseq %>%
+  inner_join(., atacseq, by = 'symbol', suffix = c('_rna', '_atac')) %>%
+  filter(padj_atac < 0.05, padj_rna < 0.05) %>%
+  dplyr::select(c(gene, merged, symbol, log2FoldChange_rna, padj_rna, log2FoldChange_atac, padj_atac)) %>%
+  arrange(desc(log2FoldChange_rna)) %>%
+  inner_join(., klf14_rna_sig, by = 'gene', suffix = c('_rna', '_klf14'))
+
+write.csv(inter, file = paste0(dataset, 'intersected_genes_related_klf4.csv'))
+
+```
+
+
+
+
+```{r}
+inter_up <- read_csv('d:/Projects/UCPH/Work/master_thesis/datasets/go_term_rnaseq_intersect_atacseq_klf14_related_up_regulated.csv')
+inter_down <- read_csv('d:/Projects/UCPH/Work/master_thesis/datasets/go_term_rnaseq_intersect_atacseq_klf14_related_down_regulated.csv')
+
+inter_up_bp <- inter_up %>%
+  filter(str_detect(source, 'GO:BP')) %>%
+  arrange(desc(adjusted_p_value)) %>%
+  filter(order(adjusted_p_value) <= 10)
+
+  
+
+inter_up_gene_order <- factor(inter_up_bp$term_name, order = T)
+
+inter_up_plot <- inter_up_bp %>%
+  ggplot(aes(x = term_name, y = -log10(adjusted_p_value))) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  # ggtitle('Biological process ') +
+  xlab('Biological Process') +
+  ylab('-log10 adjusted P value') +
+  scale_x_discrete(limits = inter_up_gene_order) +
+  theme_bw()
+inter_up_plot
+ggsave(inter_up_plot, file = paste0(figure, 'go_term_upregulated_intersect.png'))
+```
+
+```{r}
+inter_down_bp <- inter_down %>%
+  filter(str_detect(source, 'GO:BP')) %>%
+  arrange(desc(adjusted_p_value)) %>%
+  filter(order(adjusted_p_value) <= 10)
+
+inter_down_gene_order <- factor(inter_down_bp$term_name, order = T)
+
+inter_down_plot <- inter_down_bp %>%
+  ggplot(aes(x = term_name, y = -log10(adjusted_p_value))) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  # ggtitle('Biological process ') +
+  xlab('Biological Process') +
+  ylab('-log10 adjusted P value') +
+  scale_x_discrete(limits = inter_down_gene_order) +
+  theme_bw()
+inter_down_plot
+ggsave(inter_down_plot, file = paste0(figure, 'go_term_downregulated_intersect.png'))
+```
+
+```{r}
+sessionInfo()
+
+```
+
+
+
+

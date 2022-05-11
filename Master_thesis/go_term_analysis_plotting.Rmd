@@ -1,0 +1,155 @@
+---
+title: "rnaseq_go_term"
+author: "Sejun Kim"
+date: '2022 1 16 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+setwd('d:/Projects/UCPH/Work/rnaseq/')
+```
+
+## GO term_rnaseq
+
+```{r}
+up <- read_csv('go_term_analysis_rnaseq_high_pdaj_upregulated.csv')
+down <- read_csv('go_term_analysis_rnaseq_high_pdaj_downregulated.csv')
+
+up_bp <- up %>%
+  filter(str_detect(source, 'GO:BP')) %>%
+  arrange(negative_log10_of_adjusted_p_value) %>%
+  filter(-log10(adjusted_p_value) >2)
+
+
+up_gene_order <- factor(up_bp$term_name, order = T)
+
+up_plot <- up_bp %>%
+  ggplot(aes(x = term_name, y = -log10(adjusted_p_value))) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  ggtitle('Biological process ') +
+  xlab('Biological Process') +
+  ylab('adjusted P value(-1og10)') +
+  scale_x_discrete(limits = up_gene_order) +
+  theme_bw()
+up_plot
+ggsave(up_plot, file = 'go_term_upregulated_rnaseq.png')
+```
+
+```{r}
+down_bp <- down %>%
+  filter(str_detect(source, 'GO:BP')) %>%
+  arrange(negative_log10_of_adjusted_p_value)
+
+down_gene_order <- factor(down_bp$term_name, order = T)
+
+down_plot <- down_bp %>%
+  ggplot(aes(x = term_name, y = -log10(adjusted_p_value))) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  ggtitle('Biological process ') +
+  xlab('Biological Process') +
+  ylab('adjusted P value(-1og10)') +
+  scale_x_discrete(limits = down_gene_order) +
+  theme_bw()
+down_plot
+ggsave(down_plot, file = 'go_term_downregulated_rnaseq.png')
+```
+
+
+
+```{r}
+adj <- read_csv('hg38.high_padj.csv') %>%
+  arrange(log2FoldChange)
+down_bp_pro <- down_bp$intersections %>%
+  str_split(',')
+
+down_sig_bp <- data.frame(matrix(0, nrow = length(down_bp_pro[[1]]), ncol = 10, 
+                               dimnames = list(NULL, colnames(adj))))
+
+for (i in 1:length(down_bp_pro[[1]])){
+  down_sig_bp[i,] = filter(adj, str_detect(symbol, down_bp_pro[[1]][i]))
+}
+
+down_sig_bp <- down_sig_bp %>%
+  dplyr::select(-c(lfcSE, stat, pvalue, entrez)) %>%
+  arrange(log2FoldChange)
+
+down_sig_bp
+
+write_csv(down_sig_bp, 'bp_downregulated_genes.csv')
+```
+
+
+```{r}
+
+up_bp_pro <- up_bp$intersections %>%
+  str_split(',')
+
+up_sig_bp <- data.frame(matrix(0, nrow = length(up_bp_pro[[1]]), ncol = 10, 
+                               dimnames = list(NULL, colnames(adj))))
+
+for (i in 1:length(up_bp_pro[[1]])){
+  up_sig_bp[i,] = filter(adj, str_detect(symbol, up_bp_pro[[1]][i]))
+}
+
+up_sig_bp <- up_sig_bp %>%
+  dplyr::select(-c(lfcSE, stat, pvalue, entrez)) %>%
+  arrange(desc(log2FoldChange))
+
+up_sig_bp
+write_csv(up_sig_bp, 'bp_upregulated_genes.csv')
+
+```
+
+
+## by pvalue
+
+```{r}
+up_pvalue <- read_csv('go_term_analysis_rnaseq_pvalue_upregulated.csv')
+down_pvalue <- read_csv('go_term_analysis_rnaseq_pvalue_downregulated.csv')
+
+up_bp_pvalue <- up_pvalue %>%
+  filter(str_detect(source, 'GO:BP')) %>%
+  arrange(negative_log10_of_adjusted_p_value) %>%
+  filter(-log10(adjusted_p_value) >5)
+
+
+up_gene_order_pvalue <- factor(up_bp_pvalue$term_name, order = T)
+
+up_plot_pvalue <- up_bp_pvalue %>%
+  ggplot(aes(x = term_name, y = -log10(adjusted_p_value))) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  ggtitle('Biological process ') +
+  xlab('Biological Process') +
+  ylab('adjusted P value(-1og10)') +
+  scale_x_discrete(limits = up_gene_order_pvalue) +
+  theme_bw()
+up_plot_pvalue
+ggsave(up_plot_pvalue, file = 'go_term_upregulated_rnaseq_pvalue.png')
+```
+
+```{r}
+down_bp_pvalue <- down_pvalue %>%
+  filter(str_detect(source, 'GO:BP')) %>%
+  arrange(negative_log10_of_adjusted_p_value) %>%
+  filter(-log10(adjusted_p_value) >15)
+
+down_gene_order_pvalue <- factor(down_bp_pvalue$term_name, order = T)
+
+down_plot_pvalue <- down_bp_pvalue %>%
+  ggplot(aes(x = term_name, y = -log10(adjusted_p_value))) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  ggtitle('Biological process ') +
+  xlab('Biological Process') +
+  ylab('adjusted P value(-1og10)') +
+  scale_x_discrete(limits = down_gene_order_pvalue) +
+  theme_bw()
+down_plot_pvalue
+ggsave(down_plot_pvalue, file = 'go_term_downregulated_rnaseq_pvalue.png')
+```
+

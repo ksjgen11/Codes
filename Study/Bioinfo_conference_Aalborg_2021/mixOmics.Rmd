@@ -1,0 +1,43 @@
+---
+title: "mixOmics_test"
+author: "Sejun Kim"
+date: '2021 11 18 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(mixOmics)
+```
+
+## MixOmics
+
+examples
+
+```{r}
+
+data(liver.toxicity)
+help(liver.toxicity)
+
+
+```
+
+
+```{r}
+
+
+cimDiablo()
+
+```
+
+
+
+
+mixOmics homepage refer
+
+
+
+
+
+

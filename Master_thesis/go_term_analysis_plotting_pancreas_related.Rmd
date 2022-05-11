@@ -1,0 +1,94 @@
+---
+title: "go_rnaseq_with_pancreas"
+author: "Sejun Kim"
+date: '2022 2 6 '
+output: html_document
+---
+---
+title: "rnaseq_go_term"
+author: "Sejun Kim"
+date: '2022 1 16 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+setwd('d:/Projects/UCPH/Work/rnaseq/goterm')
+```
+
+## GO term_rnaseq
+
+```{r}
+
+panc <- read_csv('pancreas_specific_genes.csv')
+adj <- read_csv('d:/Projects/UCPH/Work/rnaseq/hg38.result_tb.csv') %>%
+  na.omit() %>%
+  mutate(pancreas = ifelse(symbol %in% panc$name, 'related', 'not'), 
+         DEgenes = ifelse(padj <= 0.05, 'significant', 'not_significant')) %>%
+  group_by(pancreas, DEgenes)
+
+table <- table('DE gene' = adj$DEgenes, 'pancreas gene' = adj$pancreas)
+table
+
+test <-fisher.test(table)
+test$estimate
+test$p.value
+
+rnaseq_pan <- adj %>%
+  filter(pancreas == 'related', padj <0.05) %>%
+  arrange(log2FoldChange)
+
+write.csv(rnaseq_pan, file = 'rnaseq_pancreas_related_high_adj.csv')
+
+```
+
+```{r}
+
+up <- read_csv('go_term_up_ordered.csv')
+down <- read_csv('go_term_down_ordered.csv')
+
+up_bp <- up %>%
+  filter(str_detect(source, 'GO:BP')) %>%
+  arrange(negative_log10_of_adjusted_p_value)  %>%
+  filter(negative_log10_of_adjusted_p_value > 2)
+
+
+up_gene_order <- factor(up_bp$term_name, order = T)
+
+up_plot <- up_bp %>%
+  ggplot(aes(x = term_name, y = -log10(adjusted_p_value))) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  ggtitle('Biological process ') +
+  xlab('Biological Process') +
+  ylab('adjusted P value(-1og10)') +
+  scale_x_discrete(limits = up_gene_order) +
+  theme_bw()
+up_plot
+ggsave(up_plot, file = 'go_term_upregulated_rnaseq.png')
+```
+
+```{r}
+down_bp <- down %>%
+  filter(str_detect(source, 'GO:BP')) %>%
+  arrange(negative_log10_of_adjusted_p_value) %>%
+  filter(negative_log10_of_adjusted_p_value >5)
+
+down_gene_order <- factor(down_bp$term_name, order = T)
+
+down_plot <- down_bp %>%
+  ggplot(aes(x = term_name, y = -log10(adjusted_p_value))) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  ggtitle('Biological process ') +
+  xlab('Biological Process') +
+  ylab('adjusted P value(-1og10)') +
+  scale_x_discrete(limits = down_gene_order) +
+  theme_bw()
+down_plot
+ggsave(down_plot, file = 'go_term_downregulated_rnaseq.png')
+```
+
+

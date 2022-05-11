@@ -1,0 +1,88 @@
+---
+title: "DESeq2 for normalization"
+author: "Yura SONG"
+date: "`r format(Sys.Date(), '%d %B, %Y')`" 
+output: html_notebook
+---
+
+# Preparation
+
+## Library
+
+Before starting the DEG analysis on the RNA-seq data, the first thing to do is attaching libraries which we need further.
+
+```{r attach library required for the analysis}
+library(tidyverse)
+library(DESeq2)
+library(pheatmap)
+library(RColorBrewer)
+library(ggthemes)
+library(cowplot)
+library(factoextra)
+library(ggfortify)
+library(ggrepel)
+setwd('d:/Projects/UCPH/Work/atacseq/peak_calling_lower/')
+```
+
+## Data
+
+### CountData
+
+```{r}
+counts <- read.delim("raw_count.txt", h=T, sep="\t")
+
+countData <- as.matrix(counts[,2:ncol(counts)])
+rownames(countData) <- counts$merged # which could be the indicator of genes
+colnames(countData) <- c('si673_12h_1','si673_12h_2','si673_12h_3',
+                                   'si673_24h_1', 'si673_24h_2','si673_24h_3', 
+                     'si673_4h_1', 'si673_4h_2', 'si673_4h_3', 
+                     'siNT_1', 'siNT_2', 'siNT_3')
+```
+
+### ColData
+
+Including sample information. 
+
+# Run DESeq2
+
+To build a DESeq Data Set object, we need to provide 3 elements:
+1. A matrix of raw read counts for all genes in all samples, countData in our case.
+2. A dataframe providing information about all samples, colData in our case.
+3. A design, which we would like to compare each other. It’s simply the *condition of sample*. 
+
+We will build DESeq2 object, this would be a main object which we will interact with for finding differential genes. Since the comparison consideres the cell lineage, developmental stage and tissue origin, so those three will put in design.
+
+```{r build DESeq2 object}
+dds <- DESeqDataSetFromMatrix(countData, design, design = ~ condition)
+```
+
+While the pre-filteration of low count before running DESeq2 is not mandatory, there are two reasons which make pre-filtering useful: by removing rows in which there are very few reads, we reduce the memory size of the dds data object, and we increase the speed of the transformation and testing functions within DESeq2. Here we perform a minimal pre-filtering to keep only rows, the gene which is expressed at least one sample. Note that more strict filtering to increase power is automatically applied via independent filtering on the mean of normalized counts within the *results* function.
+
+```{r prefiltration}
+keep <- rowSums(counts(dds)) > 10 # Or you could adjust it 
+dds <- dds[keep,]
+```
+
+The next step is **data transformation**. We are all looking forward to get the differential expression analysis results but let’s first check the data we have and what they look like. 
+
+## Normalization
+
+We will do data normalization as a first step of data normalization. The first parameter that influences gene read counts is the sequencing depth, the gene will get more or less reads depending on how much the samples were sequenced. For this reason, we need to do normalize the data for sequencing depth.
+
+In DESeq2, with **estimateSizeFactors** function that uses the median ratio method.Ssize factor for each sample would be calculated and it corresponds to the multiplication factor which could be used to normalize the counts for sample sequencing depth.
+
+```{r calculating size factors}
+dds <- estimateSizeFactors(dds)
+sizeFactors(dds)
+```
+
+For the normalization, we will see the read count distribution before normalization and after normalization on DESeq2. Let's have a look.
+```{r boxplot before normalization}
+boxplot(log2(1 + counts(dds, normalized = FALSE) ), las=3, cex.axis=0.6, ylab="log2(1+counts)", main="Before normalization")
+```
+
+Then, look at the reads counts after normalization. 
+```{r boxplot after normalization}
+boxplot(log2(1 + counts(dds, normalized = TRUE) ), las=3, cex.axis=0.6, ylab="log2(1+counts)", main="After normalization")
+```
+
